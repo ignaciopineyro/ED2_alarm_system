@@ -1,0 +1,39 @@
+18:18:21 **** Build of configuration Debug for project edu_ciaa_nxp ****
+make -r -j8 all 
+Building file: ../src/cr_startup_lpc43xx.c
+Building file: ../src/edu_ciaa_nxp.c
+Building file: ../src/sysinit.c
+Invoking: MCU C Compiler
+arm-none-eabi-gcc -DDEBUG -D__CODE_RED -DCORE_M4 -D__LPC43XX__ -D__REDLIB__ -D__MULTICORE_NONE -I"C:\Users\nacho\Desktop\Facultad\Electronica_Digital_II\TP_Final\lpc_chip_43xx\inc" -I"C:\Users\nacho\Desktop\Facultad\Electronica_Digital_II\TP_Final\lpc_chip_43xx\inc\usbd" -O0 -fno-common -g3 -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fsingle-precision-constant -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -mthumb -D__REDLIB__ -fstack-usage -specs=redlib.specs -MMD -MP -MF"src/cr_startup_lpc43xx.d" -MT"src/cr_startup_lpc43xx.o" -MT"src/cr_startup_lpc43xx.d" -o "src/cr_startup_lpc43xx.o" "../src/cr_startup_lpc43xx.c"
+Invoking: MCU C Compiler
+arm-none-eabi-gcc -DDEBUG -D__CODE_RED -DCORE_M4 -D__LPC43XX__ -D__REDLIB__ -D__MULTICORE_NONE -I"C:\Users\nacho\Desktop\Facultad\Electronica_Digital_II\TP_Final\lpc_chip_43xx\inc" -I"C:\Users\nacho\Desktop\Facultad\Electronica_Digital_II\TP_Final\lpc_chip_43xx\inc\usbd" -O0 -fno-common -g3 -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fsingle-precision-constant -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -mthumb -D__REDLIB__ -fstack-usage -specs=redlib.specs -MMD -MP -MF"Invoking: MCU C Compiler
+src/edu_ciaa_nxp.d" -MT"src/edu_ciaa_nxp.o" -MT"src/edu_ciaa_nxp.d" -o "src/edu_ciaa_nxp.o" "../src/edu_ciaa_nxp.c"
+arm-none-eabi-gcc -DDEBUG -D__CODE_RED -DCORE_M4 -D__LPC43XX__ -D__REDLIB__ -D__MULTICORE_NONE -I"C:\Users\nacho\Desktop\Facultad\Electronica_Digital_II\TP_Final\lpc_chip_43xx\inc" -I"C:\Users\nacho\Desktop\Facultad\Electronica_Digital_II\TP_Final\lpc_chip_43xx\inc\usbd" -O0 -fno-common -g3 -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fsingle-precision-constant -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -mthumb -D__REDLIB__ -fstack-usage -specs=redlib.specs -MMD -MP -MF"src/sysinit.d" -MT"src/sysinit.o" -MT"src/sysinit.d" -o "src/sysinit.o" "../src/sysinit.c"
+Finished building: ../src/edu_ciaa_nxp.c
+ 
+Finished building: ../src/cr_startup_lpc43xx.c
+ 
+Finished building: ../src/sysinit.c
+ 
+Building target: edu_ciaa_nxp.axf
+Invoking: MCU Linker
+arm-none-eabi-gcc -nostdlib -L"C:\Users\nacho\Desktop\Facultad\Electronica_Digital_II\TP_Final\lpc_chip_43xx\Debug" -Xlinker -Map="edu_ciaa_nxp.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -mthumb -T "edu_ciaa_nxp_Debug.ld" -o "edu_ciaa_nxp.axf"  ./src/cr_startup_lpc43xx.o ./src/edu_ciaa_nxp.o ./src/sysinit.o   -llpc_chip_43xx
+Memory region         Used Size  Region Size  %age Used
+      MFlashA512:       10780 B       512 KB      2.06%
+      MFlashB512:          0 GB       512 KB      0.00%
+        RamLoc32:         496 B        32 KB      1.51%
+        RamLoc40:          0 GB        40 KB      0.00%
+        RamAHB32:          0 GB        32 KB      0.00%
+        RamAHB16:          0 GB        16 KB      0.00%
+    RamAHB_ETB16:          0 GB        16 KB      0.00%
+Finished building target: edu_ciaa_nxp.axf
+ 
+make --no-print-directory post-build
+Performing post-build steps
+arm-none-eabi-size "edu_ciaa_nxp.axf"; # arm-none-eabi-objcopy -v -O binary "edu_ciaa_nxp.axf" "edu_ciaa_nxp.bin" ; # checksum -p LPC4337 -d "edu_ciaa_nxp.bin";
+   text	   data	    bss	    dec	    hex	filename
+  10780	      0	    496	  11276	   2c0c	edu_ciaa_nxp.axf
+ 
+
+18:18:21 Build Finished. 0 errors, 0 warnings. (took 707ms)
+
