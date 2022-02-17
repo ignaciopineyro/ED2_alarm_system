@@ -15,17 +15,20 @@ volatile int LED3_STATUS = 0; 						// Estado inicial del LED3
 volatile int LED1_Ticks = 0;						// Ticks del LED1
 volatile int LED2_Ticks = 0;						// Ticks del LED2
 
-unsigned int temperature=0, temp[10];
+unsigned int temperature=0, temperature2=0;
 
 struct LLI_T LLI0, LLI1;							// Struct de tipo LLI_T
 
 //-----Lectura del ADC-----//
 unsigned int readADC(void){
-	ADC -> CR = (0 << 24) ;
-	ADC -> CR = (1 << 24) ;
+	ADC -> CR = (0 << 24);							// Start en 0 para activar el Burst
+	ADC -> CR = (1 << 16);							// Burst en 1
 
-	while(!(ADC -> STAT & (1 << 1))){ } // Waits for conversion
+	while(!(ADC -> STAT & (1 << 1))){				// Espera a que termine la conversion
+		printf('\nWaiting for convertion');
+	}
 
+	ADC -> CR = (1 << 24);							// Reactivo el Start
 	temperature = ADC -> DR1;
 	//printf("\nTemperature = %d", temperature);
 	return (unsigned int) temperature;
@@ -78,6 +81,7 @@ void GPIO0_IRQHandler(void){
 	GPIO_PIN_INT->IST = (1 << 0); 					// Limpia la interrupcion anterior en la pos 0 del PINTSEL0
 	PULS_STATUS = 1;
 	temperature = readADC();
+	printf("\nTemperature = %d", temperature);
 }
 
 //-----PULS_1 Handler = DOWN-----//
@@ -164,7 +168,7 @@ int main(void){
 	*/
 
 	//-----ADC0_1-----//
-	SCU -> SFSP[4][1] = (1 << 4) | (0x4);					// ADC0_1 = Func 0 - Desactiva PullUp - Desactiva PullDown
+	//SCU -> SFSP[4][1] = (1 << 4) | (0x4);					// ADC0_1 = Func 0 - Desactiva PullUp - Desactiva PullDown
 	SCU -> ENAIO[0] = (1 << 1);								// Selecciona la entrada analogica del ADC0_1
 
     ADC -> CR = (1 << 1)  									// ADC Select = ADCn_1
@@ -218,8 +222,8 @@ int main(void){
 			GPIO_PORT-> SET[1]= (1<<12);
 		}
 
-		//temperature = readADC();
-		printf("\nTemperature = %d", temperature);
+		//temperature2 = readADC();
+		//printf("\nTemperature2 = %d", temperature);
 
 	}
 
