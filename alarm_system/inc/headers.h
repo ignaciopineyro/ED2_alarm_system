@@ -3,6 +3,7 @@
 #define SYSTEM_BAUD_RATE 115200
 #define CIAA_BOARD_UART USART2
 
+typedef unsigned short uint16_t;
 
 //-----SCU-----//
 
