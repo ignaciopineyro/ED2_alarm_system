@@ -97,9 +97,9 @@ typedef struct {							/*!< (@ 0x40051000) CCU1 Structure         */
  * @brief CCU2 register block structure
  */
 typedef struct {							/*!< (@ 0x40052000) CCU2 Structure         */
-	__IO uint32_t  PM;						/*!< (@ 0x40052000) Power mode register    */
-	__I  uint32_t  BASE_STAT;				/*!< (@ 0x40052004) CCU base clocks status register */
-	__I  uint32_t  RESERVED0[62];
+	volatile uint32_t  PM;						/*!< (@ 0x40052000) Power mode register    */
+	volatile const  uint32_t  BASE_STAT;				/*!< (@ 0x40052004) CCU base clocks status register */
+	volatile const  uint32_t  RESERVED0[62];
 	CCU_CFGSTAT_T  CLKCCU[CLK_CCU2_LAST - CLK_CCU1_LAST];	/*!< (@ 0x40052100) Start of CCU2 clock registers */
 } LPC_CCU2_T;
 

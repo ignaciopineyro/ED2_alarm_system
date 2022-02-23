@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 
 #define SYSTEM_BAUD_RATE 115200
 #define CIAA_BOARD_UART USART2
@@ -9,6 +10,12 @@ typedef unsigned short uint16_t;
 
 #define SCU_BASE 0x40086000							// Direccion Base SCU
 #define SCU ((SCU_T*) SCU_BASE)						// Puntero a la estructura SCU
+
+#define SCU_MODE_FUNC6		0x6						// Seleccion de la funcion 6 del pin
+#define SCU_MODE_EZI		(0x1 << 6)				// Habilita buffer de entrada (deshabilita con 0)
+#define SCU_MODE_ZIF_DIS	(0x1 << 7)				// Deshabilita el filtro anti glitch de entrada (habilita con 1)
+#define MD_PDN				(0x3 << 3)				/** Enable pull-down resistor at pad */
+#define MD_PLN						(0x2 << 3)		/** Disable pull-down and pull-up resistor at resistor at pad */
 
 typedef struct {
 	int  SFSP[16][32];								// P0 a P9 y PA a PF
@@ -24,6 +31,43 @@ typedef struct {
 	int  PINTSEL[2];								// Pin interrupt select register for pin int 0 to 3 index 0, 4 to 7 index 1
 } SCU_T;
 
+//-----SCB-----//
+#define SCS_BASE (0xE000E000UL)         			//*!< System Control Space Base Address  */
+#define SCB_BASE (SCS_BASE +  0x0D00UL)             /*!< System Control Block Base Address  */
+
+typedef struct {
+       uint32_t RESERVED0[1];
+       volatile const  uint32_t ICTR;               //*!< Offset: 0x004 (R/ )  Interrupt Controller Type Register      */
+       volatile uint32_t ACTLR;                  	//*!< Offset: 0x008 (R/W)  Auxiliary Control Register              */
+} SCnSCB_Type;
+
+typedef struct
+{
+	volatile const  uint32_t CPUID;                 //*!< Offset: 0x000 (R/ )  CPUID Base Register                                   */
+	volatile uint32_t ICSR;                    		//*!< Offset: 0x004 (R/W)  Interrupt Control and State Register                  */
+	volatile uint32_t VTOR;                    		//*!< Offset: 0x008 (R/W)  Vector Table Offset Register                          */
+	volatile uint32_t AIRCR;                   		/*!< Offset: 0x00C (R/W)  Application Interrupt and Reset Control Register      */
+	volatile uint32_t SCR;                     		/*!< Offset: 0x010 (R/W)  System Control Register                               */
+	volatile uint32_t CCR;                     		/*!< Offset: 0x014 (R/W)  Configuration Control Register                        */
+	volatile uint8_t  SHP[12];                 		/*!< Offset: 0x018 (R/W)  System Handlers Priority Registers (4-7, 8-11, 12-15) */
+	volatile uint32_t SHCSR;                  		/*!< Offset: 0x024 (R/W)  System Handler Control and State Register             */
+	volatile uint32_t CFSR;                   		/*!< Offset: 0x028 (R/W)  Configurable Fault Status Register                    */
+	volatile uint32_t HFSR;                    		/*!< Offset: 0x02C (R/W)  HardFault Status Register                             */
+	volatile uint32_t DFSR;                    		/*!< Offset: 0x030 (R/W)  Debug Fault Status Register                           */
+	volatile uint32_t MMFAR;                   		/*!< Offset: 0x034 (R/W)  MemManage Fault Address Register                      */
+	volatile uint32_t BFAR;                    		/*!< Offset: 0x038 (R/W)  BusFault Address Register                             */
+	volatile uint32_t AFSR;                    		/*!< Offset: 0x03C (R/W)  Auxiliary Fault Status Register                       */
+	volatile const  uint32_t PFR[2];                /*!< Offset: 0x040 (R/ )  Processor Feature Register                            */
+	volatile const  uint32_t DFR;                   /*!< Offset: 0x048 (R/ )  Debug Feature Register                                */
+	volatile const  uint32_t ADR;                   /*!< Offset: 0x04C (R/ )  Auxiliary Feature Register                            */
+	volatile const  uint32_t MMFR[4];               /*!< Offset: 0x050 (R/ )  Memory Model Feature Register                         */
+	volatile const  uint32_t ISAR[5];               /*!< Offset: 0x060 (R/ )  Instruction Set Attributes Register                   */
+    uint32_t RESERVED0[5];
+    volatile uint32_t CPACR;                   		/*!< Offset: 0x088 (R/W)  Coprocessor Access Control Register                   */
+} SCB_Type;
+
+#define SCnSCB ((SCnSCB_Type*) SCS_BASE)			//*!< System control Register not in SCB */
+#define SCB ((SCB_Type*) SCB_BASE)   				//*!< SCB configuration struct */
 
 //-----SYSTICK-----//
 
@@ -33,6 +77,7 @@ typedef struct {
 #define _SysTick_CTRL_CLKSOURCE_EXT_Msk	(0 << 2)	// SysTick CTRL: CLKSOURCE Mask
 #define _SysTick_CTRL_TICKINT_Msk (1 << 1)			// SysTick CTRL: TICKINT Mask
 #define _SysTick_CTRL_ENABLE_Msk (1 << 0)			// SysTick CTRL: ENABLE Mask
+#define TICKRATE 1000								// 1000 ticks por segundo
 
 typedef struct {
   int CTRL;											// Offset: 0x000 (R/W)  SysTick Control and Status Register
@@ -129,12 +174,20 @@ typedef struct {
 	int STIR;										// Offset: 0xE00 ( /W)  Software Trigger Interrupt Register
 } NVIC_Type;
 
+static inline void NVIC_SetPriority(int IRQn, uint32_t priority)
+{
+  if(IRQn < 0) {
+    SCB->SHP[((uint32_t)(IRQn) & 0xF)-4] = ((priority << (8 - 3)) & 0xff); } /* set Priority for Cortex-M  System Interrupts */
+  else {
+    NVIC->IP[(uint32_t)(IRQn)] = ((priority << (8 - 3)) & 0xff);    }        /* set Priority for device specific Interrupts  */
+}
 
 //-----DMA-----//
 
 #define GPDMA_BASE 0x40002000						// Direccion Base GPDMA
 #define DMA ((GPDMA_T*) GPDMA_BASE)					// Puntero a la estructura GPDMA
 #define GPDMA_NUMBER_CHANNELS 8
+#define GPDMA_CLOCK		204e6						// Frecuencia de CLK de operacion de la placa
 
 struct LLI_T {
  unsigned int  source;								// Inicio del area donde se encuentran los datos a transferir
@@ -148,6 +201,8 @@ typedef struct {
 	unsigned int  CONFIG;							// DMA Channel Configuration Register
 	unsigned int  RESERVED1[3];
 } _GPDMA_CH_T;
+
+//struct LLI_T LLI0, LLI1;							// Struct de tipo LLI_T
 
 typedef struct {
 	unsigned int  INTSTAT;							// DMA Interrupt Status Register
@@ -167,3 +222,89 @@ typedef struct {
 	unsigned int  RESERVED0[50];
 	_GPDMA_CH_T   CH[GPDMA_NUMBER_CHANNELS];
 } GPDMA_T;
+
+//-----UART/USART-----//
+#define USART0_BASE		0x40081000
+#define USART2_BASE		0x400C1000
+#define USART3_BASE		0x400C2000
+#define UART1_BASE		0x40082000
+
+#define USART0			((USART_T	*) USART0_BASE)
+#define USART2			((USART_T	*) USART2_BASE)
+#define USART3			((USART_T	*) USART3_BASE)
+#define UART1			((USART_T	*) UART1_BASE)
+
+#define _UART_IER_RBRINT	(1 << 0)	// RBR Interrupt enable
+
+#define UART_FCR_FIFO_EN        (1 << 0)	/*!< UART FIFO enable */
+#define UART_FCR_RX_RS          (1 << 1)	/*!< UART RX FIFO reset */
+#define UART_FCR_TX_RS          (1 << 2)	/*!< UART TX FIFO reset */
+#define UART_LCR_WLEN8          (3 << 0)	/*!< UART word length select: 8 bit data mode */
+#define UART_LCR_SBS_1BIT       (0 << 2)	/*!< UART stop bit select: 1 stop bit */
+#define UART_LCR_PARITY_DIS     (0 << 3)	/*!< UART Parity Disable */
+#define UART_LCR_DLAB_EN        (1 << 7)		/*!< UART Divisor Latches Access bit enable */
+#define UART_FCR_TRG_LEV0       (0)			/*!< UART FIFO trigger level 0: 1 character */
+#define UART_TER2_TXEN      (1 << 0)		/*!< Transmit enable bit  - valid for 18xx/43xx only */
+
+
+typedef struct {
+
+	union {
+		unsigned int  DLL; // Divisor Latch LSB. Least significant byte of the baud rate divisor value. The full divisor is used to generate a baud rate from the fractional rate divider (DLAB = 1).
+		unsigned int  THR; // Transmit Holding Register. The next character to be transmitted is written here (DLAB = 0).
+		unsigned int  RBR; // Receiver Buffer Register. Contains the next received character to be read (DLAB = 0).
+	};
+
+	union {
+		unsigned int IER;	// Interrupt Enable Register. Contains individual interrupt enable bits for the 7 potential UART interrupts (DLAB = 0).
+		unsigned int DLM;	// Divisor Latch MSB. Most significant byte of the baud rate divisor value. The full divisor is used to generate a baud rate from the fractional rate divider (DLAB = 1).
+	};
+
+	union {
+		unsigned int FCR;	// FIFO Control Register. Controls UART FIFO usage and modes.
+		unsigned int IIR;	// Interrupt ID Register. Identifies which interrupt(s) are pending.
+	};
+
+	unsigned int LCR;		// Line Control Register. Contains controls for frame formatting and break generation.
+	unsigned int MCR;		// Modem Control Register. Only present on USART ports with full modem support.
+	unsigned int LSR;		// Line Status Register. Contains flags for transmit and receive status, including line errors.
+	unsigned int MSR;		// Modem Status Register. Only present on USART ports with full modem support.
+	unsigned int SCR;		// Scratch Pad Register. Eight-bit temporary storage for software.
+	unsigned int ACR;		// Auto-baud Control Register. Contains controls for the auto-baud feature.
+	unsigned int ICR;		// IrDA control register (not all UARTS)
+	unsigned int FDR;		// Fractional Divider Register. Generates a clock input for the baud rate divider.
+	unsigned int OSR;		// Oversampling Register. Controls the degree of oversampling during each bit time. Only on some UARTS.
+	unsigned int TER1;		// Transmit Enable Register. Turns off USART transmitter for use with software flow control.
+	unsigned int RESERVED0[3];
+    unsigned int HDEN;		// Half-duplex enable Register- only on some UARTs
+	unsigned int RESERVED1[1];
+	unsigned int SCICTRL;	// Smart card interface control register- only on some UARTs
+
+	unsigned int RS485CTRL;	// RS-485/EIA-485 Control. Contains controls to configure various aspects of RS-485/EIA-485 modes.
+	unsigned int RS485ADRMATCH;	// RS-485/EIA-485 address match. Contains the address match value for RS-485/EIA-485 mode.
+	unsigned int RS485DLY;		// RS-485/EIA-485 direction control delay.
+
+	union {
+		unsigned int SYNCCTRL;	// Synchronous mode control register. Only on USARTs.
+		unsigned int FIFOLVL;	// FIFO Level register. Provides the current fill levels of the transmit and receive FIFOs.
+	};
+
+	unsigned int TER2;			// Transmit Enable Register. Only on LPC177X_8X UART4 and LPC18XX/43XX USART0/2/3.
+} USART_T;
+
+static inline void UART_SendByte(USART_T *pUART, unsigned char data){
+	pUART->THR = (unsigned int) data;
+}
+
+//-----Encabezados-----//
+void NVIC_init(void);
+void systick_init(void);
+void LEDs_init(void);
+void DMA_init(void);
+void ADC_init(void);
+void puls_init(void);
+void display_init(void);
+void UART_init(void);
+
+int sprintf_mio(char *, const char *, ...);
+unsigned int readADC(void);
