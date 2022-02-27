@@ -1,9 +1,5 @@
 #include <stdbool.h>
 
-#define SYSTEM_BAUD_RATE 115200
-#define CIAA_BOARD_UART USART2
-
-typedef unsigned short uint16_t;
 
 //-----SCU-----//
 
@@ -41,6 +37,7 @@ typedef struct {
   int CALIB;										// Offset: 0x00C (R/ )  SysTick Calibration Register
 } SysTick_T;
 
+
 //-----GPIO-----//
 
 #define GPIO_PORT_BASE 0x400F4000					// Direccion Base GPIO
@@ -72,18 +69,6 @@ typedef struct {
 	int FALL;										// Pin Interrupt Falling Edge register
 	int IST;										// Pin Interrupt Status register
 } PIN_INT_T;
-
-
-//-----DAC-----//
-
-#define DAC_BASE 0x400E1000							// Direccion Base DAC
-#define DAC ((DAC_T*) DAC_BASE)						// Puntero a la estructura DAC
-
-typedef struct {
-	int CR;											// Valores de output del DAC desde bit6. Vout= VALUE/1024 * VDD.
-	int CTRL;										// Cantidad de datos a sacar por el DAC
-	int CNTVAL;										// Valor calculado en main
-} DAC_T;
 
 
 //-----ADC-----//
@@ -130,40 +115,11 @@ typedef struct {
 } NVIC_Type;
 
 
-//-----DMA-----//
+//-----Funciones-----//
 
-#define GPDMA_BASE 0x40002000						// Direccion Base GPDMA
-#define DMA ((GPDMA_T*) GPDMA_BASE)					// Puntero a la estructura GPDMA
-#define GPDMA_NUMBER_CHANNELS 8
-
-struct LLI_T {
- unsigned int  source;								// Inicio del area donde se encuentran los datos a transferir
- unsigned int  destination; 						// Inicio del area destino de los datos transferidos
- unsigned int  next;        						// Address of next strLLI in chain
- unsigned int  control;     						// DMACCxControl register
-};
-
-typedef struct {
-	struct LLI_T LLI ;								// DMA Channel Source Address Register
-	unsigned int  CONFIG;							// DMA Channel Configuration Register
-	unsigned int  RESERVED1[3];
-} _GPDMA_CH_T;
-
-typedef struct {
-	unsigned int  INTSTAT;							// DMA Interrupt Status Register
-	unsigned int  INTTCSTAT;						// DMA Interrupt Terminal Count Request Status Register
-	unsigned int  INTTCCLEAR;						// DMA Interrupt Terminal Count Request Clear Register. Limpia la interrupcion anterior.
-	unsigned int  INTERRSTAT;						// DMA Interrupt Error Status Register
-	unsigned int  INTERRCLR;						// DMA Interrupt Error Clear Register
-	unsigned int  RAWINTTCSTAT;						// DMA Raw Interrupt Terminal Count Status Register
-	unsigned int  RAWINTERRSTAT;					// DMA Raw Error Interrupt Status Register
-	unsigned int  ENBLDCHNS;						// DMA Enabled Channel Register
-	unsigned int  SOFTBREQ;							// DMA Software Burst Request Register
-	unsigned int  SOFTSREQ;							// DMA Software Single Request Register
-	unsigned int  SOFTLBREQ;						// DMA Software Last Burst Request Register
-	unsigned int  SOFTLSREQ;						// DMA Software Last Single Request Register
-	unsigned int  CONFIG;							// DMA Configuration Register
-	unsigned int  SYNC;								// DMA Synchronization Register
-	unsigned int  RESERVED0[50];
-	_GPDMA_CH_T   CH[GPDMA_NUMBER_CHANNELS];
-} GPDMA_T;
+void NVIC_init(void);
+void systick_init(void);
+void LEDs_init(void);
+void ADC_init(void);
+void pulsadores_init(void);
+void display_init(void);
