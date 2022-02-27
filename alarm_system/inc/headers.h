@@ -123,3 +123,7 @@ void LEDs_init(void);
 void ADC_init(void);
 void pulsadores_init(void);
 void display_init(void);
+
+static void readADC(void);
+void NVIC_EnaIRQ(int IRQn);
+void NVIC_DesIRQ(int IRQn);

@@ -1,5 +1,5 @@
 #include <headers.h>
-#include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 
 volatile int LED_PULS_DELAY = 1;					// Frecuencia de parpadeo de led de pulsadores
@@ -12,20 +12,8 @@ volatile int LED3_STATUS = 0; 						// Estado inicial del LED3
 volatile int LED1_Ticks = 0;						// Ticks del LED1
 volatile int LED2_Ticks = 0;						// Ticks del LED2
 
-unsigned int temperature=0, temperature2=0;
-
-//-----Lectura del ADC-----//
-unsigned int readADC(void){
-	ADC -> CR = (0 << 24);							// Start en 0 para activar el Burst
-	ADC -> CR = (1 << 16);							// Burst en 1
-
-	while(!(ADC -> STAT & (1 << 1))){				// Espera a que termine la conversion
-	}
-
-	ADC -> CR = (1 << 24);							// Reactivo el Start
-	temperature = ADC -> DR1;
-	return (unsigned int) temperature;
-}
+unsigned int tmp;
+static volatile uint8_t ADC_Interrupt_Done_Flag;
 
 void SysTick_Handler(void){
 	printf("\nLED1_Ticks = %d - LED2_Ticks = %d", LED1_Ticks, LED2_Ticks);
@@ -64,18 +52,29 @@ void SysTick_Handler(void){
 	}
 }
 
+void ADC0_IRQHandler(void){
+	printf('ADC HANDLER');
+	//NVIC -> ICER[0] = (1<<17);						// Deshabilitacion de la interrupcion del ADC
+	NVIC_DesIRQ(17);
+	tmp = ADC -> DR1; 								// DR = Registro en el que se almacena el valor adquirido
+	tmp = (tmp >> 6) & 0x03FF;
+	ADC_Interrupt_Done_Flag = 1;
+	printf('Medición = %u\n', tmp);
+	NVIC_EnaIRQ(17);
+	//NVIC -> ISER[0] = (1<<17);						// Habilito la interrupcion del ADC
+}
 
 //-----PULS_0 Handler = UP-----//
 void GPIO0_IRQHandler(void){
 	// TODO: Subir valor alarma
-	GPIO_PIN_INT->IST = (1 << 0); 					// Limpia la interrupcion anterior en la pos 0 del PINTSEL0
+	GPIO_PIN_INT -> IST = (1 << 0);					// Limpia la interrupcion anterior en la pos 0 del PINTSEL0
 	PULS_STATUS = 1;
 }
 
 //-----PULS_1 Handler = DOWN-----//
 void GPIO1_IRQHandler(void){
 	// TODO: Bajar valor alarma
-	GPIO_PIN_INT->IST = (1 << 1); 					// Limpia la interrupcion anterior en la pos 1 del PINTSEL0
+	GPIO_PIN_INT -> IST = (1 << 1); 				// Limpia la interrupcion anterior en la pos 1 del PINTSEL0
 	PULS_STATUS = 1;
 	ALARM_STATUS = 0; // TODO: SACAR ESTO, ES SOLO PARA SIMULAR ALARMA ADC
 }
@@ -91,14 +90,28 @@ void GPIO1_IRQHandler(void){
 //-----PULS_3 Handler = ENTER-----//
 void GPIO3_IRQHandler(void){
 	// TODO: Seleccionar valor alarma
-	GPIO_PIN_INT->IST = (1 << 3); 					// Limpia la interrupcion anterior en la pos 2 del PINTSEL0
+	GPIO_PIN_INT -> IST = (1 << 3); 				// Limpia la interrupcion anterior en la pos 2 del PINTSEL0
 	PULS_STATUS = 1;
 	ALARM_STATUS = 1; // TODO: SACAR ESTO, ES SOLO PARA SIMULAR ALARMA ADC
 }
 
-int main(void){
-	static int i = 0;
+static void readADC(void){
+	NVIC_EnaIRQ(17);
+	//NVIC -> ISER[0] = (1<<17);								// Habilito la interrupcion del ADC
+	ADC -> INTEN = (1 << 0);								// Habilitacion de la interrupcion generada cuando se termina una conversion
 
+	ADC_Interrupt_Done_Flag = 1;
+	while (1){
+		if (ADC_Interrupt_Done_Flag) {
+			ADC_Interrupt_Done_Flag = 0;
+			ADC -> CR = (1 << 24);							// Inicio de una adquisicion
+		}
+	}
+	NVIC_DesIRQ(17);
+	//NVIC -> ICER[0] = (1<<17);								// Deshabilitacion de la interrupcion del ADC
+}
+
+int main(void){
 	NVIC_init();
 	systick_init();
 	LEDs_init();
@@ -106,17 +119,17 @@ int main(void){
 	pulsadores_init();
 	display_init();
 
-	while(1) {
-		//-----OK Status-----//
+	/*while(1) {
+			//-----OK Status-----//
 		if (ALARM_STATUS == 1){
 			GPIO_PORT-> CLR[1]= (1<<12);
 		}
 		else{
+			//-----ALARM Status-----//
 			GPIO_PORT-> CLR[1]= (1<<11);
 			GPIO_PORT-> SET[1]= (1<<12);
 		}
-
-	}
-
+	}*/
+	readADC();
 	return 0;
 }

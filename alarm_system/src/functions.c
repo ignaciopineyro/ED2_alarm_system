@@ -1,7 +1,10 @@
 #include <headers.h>
+#include <stdint.h>
 
-#define GPDMA_CLOCK		204e6						// Frecuencia de CLK de operacion de la placa
-#define TICKRATE		1000						// 1000 ticks por segundo
+#define GPDMA_CLOCK		204e6								// Frecuencia de CLK de operacion de la placa
+#define TICKRATE		1000								// 1000 ticks por segundo
+
+static volatile uint8_t ADC_Interrupt_Done_Flag;
 
 void NVIC_init(void){
 	NVIC -> ISER[1] = (1<<0) | (1<<1) | (1<<3);  			// Habilita las interrupciones de los GPIO (Pulsadores)
@@ -75,4 +78,28 @@ void pulsadores_init(void){
 
 void display_init(void){
 	//TODO: Configurar los pines del display
+}
+
+static void readADC(void){
+	NVIC_EnaIRQ(17);
+	//NVIC -> ISER[0] = (1<<17);								// Habilito la interrupcion del ADC
+	ADC -> INTEN = (1 << 0);								// Habilitacion de la interrupcion generada cuando se termina una conversion
+
+	ADC_Interrupt_Done_Flag = 1;
+	while (1){
+		if (ADC_Interrupt_Done_Flag) {
+			ADC_Interrupt_Done_Flag = 0;
+			ADC -> CR = (1 << 24);							// Inicio de una adquisicion
+		}
+	}
+	NVIC_DesIRQ(17);
+	//NVIC -> ICER[0] = (1<<17);								// Deshabilitacion de la interrupcion del ADC
+}
+
+void NVIC_EnaIRQ(int IRQn){
+	NVIC->ISER[(unsigned int)((int)IRQn) >> 5] = (unsigned int)(1 << ((unsigned int)((unsigned int)IRQn) & (unsigned int)0x1F));
+}
+
+void NVIC_DesIRQ(int IRQn){
+	NVIC->ICER[(unsigned int)((int)IRQn) >> 5] = (1 << ((unsigned int) (IRQn) & 0x1F));
 }
